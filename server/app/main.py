@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.admin_auth.router import router as admin_auth_router
 from app.api.routers import (
     auth,
     profile,
@@ -11,6 +12,7 @@ from app.api.routers import (
     subscriptions,
     admin,
     passkey,
+    addons,
 )
 
 app = FastAPI(
@@ -51,7 +53,9 @@ app.include_router(chat.router, prefix=f"{API_PREFIX}/chat")
 app.include_router(reports.router, prefix=f"{API_PREFIX}/reports")
 app.include_router(subscriptions.router, prefix=f"{API_PREFIX}/subscriptions")
 app.include_router(admin.router, prefix=f"{API_PREFIX}/admin")
+app.include_router(admin_auth_router, prefix=f"{API_PREFIX}/admin")
 app.include_router(passkey.router, prefix=f"{API_PREFIX}/passkey")
+app.include_router(addons.router, prefix=f"{API_PREFIX}/addons")
 
 # ---------------------------------
 # Health

@@ -9,6 +9,35 @@ from app.services.subscription_service import (
     set_tier, get_tier,
     can_see_likes_you, unlimited_likes, has_read_receipts, has_undo_swipe, weekly_boosts
 )
+from app.services.addon_service import grant_entitlement
+
+# Map RevenueCat product_id (normalized) -> (addon_type, count)
+# Product IDs are lowercased and hyphens replaced with underscores
+ADDON_PRODUCT_MAP = {
+    "spotlight": ("spotlight", 1),
+    "super_swipe": ("super_swipe", 5),
+    "superswipe": ("super_swipe", 5),
+    "boost": ("boost", 1),
+    "compliment": ("compliment", 5),
+    "compliments": ("compliment", 5),
+    "extend": ("extend", 1),
+    "extends": ("extend", 1),
+    "rematch": ("rematch", 1),
+    "backtrack": ("backtrack", 1),
+    "travel_mode": ("travel_mode", 1),
+    "incognito": ("incognito", 1),
+}
+
+
+def _extract_addon_from_product(product_id: str) -> tuple[str, int] | None:
+    norm = product_id.lower().replace("-", "_")
+    if norm in ADDON_PRODUCT_MAP:
+        return ADDON_PRODUCT_MAP[norm]
+    # Handle com.app.spotlight -> extract "spotlight"
+    for key in ADDON_PRODUCT_MAP:
+        if norm.endswith("_" + key) or norm == key:
+            return ADDON_PRODUCT_MAP[key]
+    return None
 
 router = APIRouter(tags=["subscriptions"])
 
@@ -69,4 +98,13 @@ async def revenuecat_webhook(
         expires = parse_exp(ent["lite"]["expires_date"])
 
     set_tier(db, app_user_id, tier=tier, expires_at=expires, entitlements=ent)
+
+    # Handle add-on consumable purchases (NON_RENEWING_PURCHASE)
+    event = payload.get("event", {})
+    product_id = event.get("product_id") or payload.get("product_id") or ""
+    mapped = _extract_addon_from_product(product_id)
+    if mapped:
+        addon_type, count = mapped
+        grant_entitlement(db, app_user_id, addon_type, remaining_count=count)
+
     return {"ok": True}

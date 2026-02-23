@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     PASSKEY_RP_NAME: str = "Datox"
     PASSKEY_ORIGIN: str = "http://localhost:8080"
 
+    # Admin auth (JWT + refresh tokens)
+    ADMIN_JWT_SECRET: str = ""
+    ADMIN_ACCESS_TOKEN_TTL_SECONDS: int = 900
+    ADMIN_REFRESH_TOKEN_TTL_SECONDS: int = 604800
+    ADMIN_REFRESH_TOKEN_JTI_SALT: str = ""
+    ADMIN_LOGIN_RATE_LIMIT_PER_MINUTE: int = 5
+    ADMIN_REFRESH_RATE_LIMIT_PER_MINUTE: int = 10
+
     class Config:
         env_file = ".env"
         extra = "ignore"

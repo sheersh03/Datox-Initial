@@ -20,7 +20,23 @@ class User(Base):
 
     ban_reason: Mapped[str | None] = mapped_column(sa.String, nullable=True)
 
+    # Admin dashboard Phase 1: denormalized for admin queries
+    verification_status: Mapped[str] = mapped_column(
+        sa.String(20),
+        server_default=sa.text("'unverified'"),
+    )
+    subscription_tier: Mapped[str | None] = mapped_column(sa.String(50), nullable=True)
+    profile_completed: Mapped[bool] = mapped_column(
+        sa.Boolean,
+        server_default=sa.text("false"),
+    )
+
     created_at: Mapped[object] = mapped_column(
         sa.DateTime(timezone=True),
-        server_default=sa.text("now()")
+        server_default=sa.text("now()"),
+    )
+    updated_at: Mapped[object] = mapped_column(
+        sa.DateTime(timezone=True),
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),
     )

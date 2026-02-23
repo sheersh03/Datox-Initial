@@ -25,4 +25,8 @@ class Profile(Base):
     verification_status: Mapped[str] = mapped_column(sa.String, server_default="unverified")
     verification_selfie_key: Mapped[str | None] = mapped_column(sa.String, nullable=True)
 
-    updated_at: Mapped[object] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("now()"))
+    updated_at: Mapped[object] = mapped_column(
+        sa.DateTime(timezone=True),
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),
+    )

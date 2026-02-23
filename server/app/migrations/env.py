@@ -38,6 +38,13 @@ from app.models.report import Report, Block
 from app.models.subscription import Subscription
 from app.models.boost import Boost
 from app.models.passkey import UserPasskey
+from app.models.addon_entitlement import UserEntitlement, AddonUsageLog
+from app.models.admin_user import AdminUser
+from app.models.audit_log import AuditLog
+from app.models.ban_history import BanHistory
+from app.models.verification_review import VerificationReview
+from app.models.subscription_event import SubscriptionEvent
+from app.models.admin_refresh_token import AdminRefreshToken
 
 target_metadata = Base.metadata
 
