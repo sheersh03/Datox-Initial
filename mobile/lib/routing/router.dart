@@ -1,10 +1,10 @@
 import 'package:go_router/go_router.dart';
+import '../core/navigation/main_navigation_shell.dart';
 import '../core/navigation/navigation_service.dart';
 import '../features/auth/ui/login_screen.dart';
 import '../features/auth/ui/phone_entry_screen.dart';
 import '../features/auth/ui/otp_verify_screen.dart';
 import '../features/passkey/ui/create_passkey_screen.dart';
-import '../features/discovery/ui/discovery_screen.dart';
 import '../features/chat/ui/chat_screen.dart';
 import '../features/matches/ui/matches_screen.dart';
 import '../features/onboarding/ui/profile_setup_screen.dart';
@@ -43,7 +43,10 @@ final appRouter = GoRouter(
       path: '/discover',
       builder: (_, s) {
         final skip = s.uri.queryParameters['skip_location'] == '1';
-        return DiscoveryScreen(skipLocationRedirect: skip);
+        return MainNavigationShell(
+          initialIndex: 2,
+          skipLocationRedirect: skip,
+        );
       },
     ),
     GoRoute(path: '/matches', builder: (_, __) => MatchesScreen()),

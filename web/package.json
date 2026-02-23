@@ -1,0 +1,14 @@
+{
+  "name": "datox-web",
+  "private": true,
+  "workspaces": [
+    "admin-dashboard"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace admin-dashboard",
+    "build": "npm run build --workspace admin-dashboard",
+    "start": "npm run start --workspace admin-dashboard",
+    "lint": "npm run lint --workspace admin-dashboard",
+    "type-check": "npm run type-check --workspace admin-dashboard"
+  }
+}

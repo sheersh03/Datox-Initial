@@ -9,4 +9,8 @@ class Subscription(Base):
     tier: Mapped[str] = mapped_column(sa.String, server_default="free")  # free/lite/plus
     entitlements_json: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     expires_at: Mapped[object | None] = mapped_column(sa.DateTime(timezone=True), nullable=True)
-    updated_at: Mapped[object] = mapped_column(sa.DateTime(timezone=True), server_default=sa.text("now()"))
+    updated_at: Mapped[object] = mapped_column(
+        sa.DateTime(timezone=True),
+        server_default=sa.func.now(),
+        onupdate=sa.func.now(),
+    )

@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/network/api_errors.dart';
+import '../../../theme/tokens.dart';
 import '../../profile/data/profile_api.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
@@ -104,7 +106,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Complete Profile')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 22, color: DatoxColors.textPrimary),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/login');
+            }
+          },
+        ),
+        title: const Text('Complete Profile'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -125,8 +139,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            initialValue: _gender,
+            value: _gender, // ignore: deprecated_member_use
             decoration: const InputDecoration(labelText: 'Gender'),
+            icon: FaIcon(
+              FontAwesomeIcons.chevronDown,
+              size: 16,
+              color: DatoxColors.textMuted,
+            ),
             items: const [
               DropdownMenuItem(value: 'male', child: Text('Male')),
               DropdownMenuItem(value: 'female', child: Text('Female')),
@@ -136,8 +155,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            initialValue: _intent,
+            value: _intent, // ignore: deprecated_member_use
             decoration: const InputDecoration(labelText: 'Intent'),
+            icon: FaIcon(
+              FontAwesomeIcons.chevronDown,
+              size: 16,
+              color: DatoxColors.textMuted,
+            ),
             items: const [
               DropdownMenuItem(value: 'dating', child: Text('Dating')),
               DropdownMenuItem(value: 'friends', child: Text('Friends')),
