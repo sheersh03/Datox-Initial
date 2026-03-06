@@ -1,40 +1,48 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
+import React, { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
+
+const TITLES: Record<string, string> = {
+  "/": "Dashboard",
+  "/reports": "Reports",
+  "/users": "Users",
+  "/subscriptions": "Subscriptions",
+  "/analytics": "Analytics",
+  "/audit-logs": "Audit Logs",
+  "/system": "System",
+};
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  async function logout() {
+  const title = useMemo(() => TITLES[pathname] ?? "Dashboard", [pathname]);
+
+  const logout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    localStorage.removeItem("datox_admin_role");
     router.replace("/login");
-  }
+  }, [router]);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", minHeight: "100vh" }}>
-      <aside style={{ borderRight: "1px solid #eee", padding: 16 }}>
-        <div style={{ fontWeight: 800 }}>Datox Admin</div>
-        <nav style={{ marginTop: 16, display: "grid", gap: 8 }}>
-          <a href="/">Overview</a>
-          <a href="/reports">Reports</a>
-          <a href="/users">Users</a>
-          <a href="/subscriptions">Subscriptions</a>
-          <a href="/analytics">Analytics</a>
-          <a href="/audit-logs">Audit Logs</a>
-          <a href="/system">System</a>
-        </nav>
-      </aside>
+    <div className={`dashboard-shell ${collapsed ? "is-collapsed" : ""}`}>
+      <Sidebar
+        collapsed={collapsed}
+        mobileOpen={mobileOpen}
+        onToggleCollapse={() => setCollapsed((prev) => !prev)}
+        onCloseMobile={() => setMobileOpen(false)}
+        onLogout={logout}
+      />
 
-      <main style={{ padding: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>Dashboard</div>
-          <button onClick={logout} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #ddd" }}>
-            Logout
-          </button>
-        </div>
-        {children}
-      </main>
+      <div className="dashboard-main">
+        <Topbar title={title} onMenuToggle={() => setMobileOpen(true)} onLogout={logout} />
+        <main className="dashboard-content">{children}</main>
+      </div>
     </div>
   );
 }

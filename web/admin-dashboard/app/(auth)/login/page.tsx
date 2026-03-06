@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LockKeyhole, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,6 +28,13 @@ export default function LoginPage() {
         setError(j?.message || "Login failed");
         return;
       }
+      const body = await res.json().catch(() => ({}));
+      const adminRole = body?.admin?.role;
+      if (typeof adminRole === "string" && adminRole.trim()) {
+        localStorage.setItem("datox_admin_role", adminRole);
+      } else {
+        localStorage.removeItem("datox_admin_role");
+      }
       router.replace("/");
     } finally {
       setLoading(false);
@@ -34,60 +42,62 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 420, margin: "48px auto" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700 }}>Datox Admin</h1>
-      <p style={{ marginTop: 8, opacity: 0.8 }}>Sign in to continue.</p>
+    <main className="auth-page">
+      <section className="auth-panel auth-panel-brand">
+        <div className="auth-brand-mark">DX</div>
+        <h1>Datox Admin</h1>
+        <p>Secure operations workspace for moderation, compliance, and system oversight.</p>
 
-      <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
-        <label style={{ display: "grid", gap: 6 }}>
-          <span>Email</span>
+        <ul className="auth-benefits" aria-label="Platform capabilities">
+          <li>
+            <ShieldCheck className="icon-16" />
+            Encrypted admin sessions
+          </li>
+          <li>
+            <LockKeyhole className="icon-16" />
+            Role-aware access controls
+          </li>
+        </ul>
+      </section>
+
+      <section className="auth-panel auth-panel-form">
+        <div className="auth-form-head">
+          <h2>Welcome back</h2>
+          <p>Sign in to continue.</p>
+        </div>
+
+        <form onSubmit={onSubmit} className="auth-form">
+          <label className="auth-label">
+            <span>Email</span>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="admin@datox.com"
             autoComplete="username"
-            style={{ width: "100%", padding: 10, border: "1px solid #ddd", borderRadius: 10 }}
+            className="auth-input"
           />
         </label>
 
-        <label style={{ display: "grid", gap: 6 }}>
-          <span>Password</span>
-          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+          <label className="auth-label">
+            <span>Password</span>
+            <div className="password-wrap">
             <input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Admin password"
               autoComplete="current-password"
-              style={{ width: "100%", padding: "10px 44px 10px 10px", border: "1px solid #ddd", borderRadius: 10 }}
+              className="auth-input auth-input-password"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? "Hide password" : "Show password"}
               title={showPassword ? "Hide password" : "Show password"}
-              style={{
-                position: "absolute",
-                right: 8,
-                width: 28,
-                height: 28,
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                display: "grid",
-                placeItems: "center",
-                borderRadius: 8,
-              }}
+              className="password-toggle"
             >
-              <span
-                style={{
-                  display: "inline-flex",
-                  transition: "transform 180ms ease, opacity 180ms ease",
-                  transform: showPassword ? "scale(1) rotate(0deg)" : "scale(0.9) rotate(-10deg)",
-                  opacity: showPassword ? 1 : 0.8,
-                }}
-              >
+              <span className={`password-icon ${showPassword ? "is-visible" : ""}`}>
                 {showPassword ? (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M3 3L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -125,27 +135,21 @@ export default function LoginPage() {
           </div>
         </label>
 
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-          <span>Remember me</span>
+          <label className="auth-remember">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            <span>Remember me</span>
         </label>
 
-        {error ? <div style={{ color: "crimson" }}>{error}</div> : null}
+          {error ? <div className="auth-error">{error}</div> : null}
 
         <button
           disabled={loading}
-          style={{
-            padding: 10,
-            borderRadius: 12,
-            border: "1px solid #111",
-            background: "#111",
-            color: "white",
-            cursor: "pointer",
-          }}
+            className="auth-submit"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
+      </section>
     </main>
   );
 }

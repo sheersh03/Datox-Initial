@@ -8,26 +8,37 @@ export default function ReportsPage() {
   const { data, isLoading, error } = useReports(status);
 
   return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 800 }}>Reports</h2>
+    <section className="page-card">
+      <h2>Reports</h2>
+      <p>Review incoming reports and moderation payloads.</p>
 
-      <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-        <button onClick={() => setStatus("open")} style={{ padding: 8, borderRadius: 10, border: "1px solid #ddd" }}>
+      <div className="filter-row" role="tablist" aria-label="Report status filters">
+        <button
+          onClick={() => setStatus("open")}
+          className={`filter-btn ${status === "open" ? "is-active" : ""}`}
+          role="tab"
+          aria-selected={status === "open"}
+        >
           Open
         </button>
-        <button onClick={() => setStatus("closed")} style={{ padding: 8, borderRadius: 10, border: "1px solid #ddd" }}>
+        <button
+          onClick={() => setStatus("closed")}
+          className={`filter-btn ${status === "closed" ? "is-active" : ""}`}
+          role="tab"
+          aria-selected={status === "closed"}
+        >
           Closed
         </button>
       </div>
 
-      <div style={{ marginTop: 16 }}>
-        {isLoading ? <div>Loading…</div> : null}
-        {error ? <div style={{ color: "crimson" }}>Failed to load reports.</div> : null}
+      <div className="page-body">
+        {isLoading ? <div className="info-text">Loading...</div> : null}
+        {error ? <div className="error-text">Failed to load reports.</div> : null}
 
-        <pre style={{ padding: 12, background: "#fafafa", border: "1px solid #eee", borderRadius: 12, overflow: "auto" }}>
+        <pre className="code-preview">
           {data ? JSON.stringify(data, null, 2) : "No data yet. Connect backend and ensure admin session."}
         </pre>
       </div>
-    </div>
+    </section>
   );
 }

@@ -16,12 +16,11 @@ export default function SystemPage() {
   }, []);
 
   return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 800 }}>System</h2>
-      {err ? <div style={{ color: "crimson" }}>Health check failed: {err}</div> : null}
-      <pre style={{ padding: 12, background: "#fafafa", border: "1px solid #eee", borderRadius: 12 }}>
-        {data ? JSON.stringify(data, null, 2) : "Loading…"}
-      </pre>
-    </div>
+    <section className="page-card">
+      <h2>System</h2>
+      <p>Service health and diagnostics.</p>
+      {err ? <div className="error-text">Health check failed: {err}</div> : null}
+      <pre className="code-preview">{data ? JSON.stringify(data, null, 2) : "Loading..."}</pre>
+    </section>
   );
 }
