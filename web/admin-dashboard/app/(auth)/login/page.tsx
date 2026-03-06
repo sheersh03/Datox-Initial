@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
@@ -19,7 +20,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ password, remember }),
+        body: JSON.stringify({ email, password, remember }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -39,6 +40,18 @@ export default function LoginPage() {
 
       <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
         <label style={{ display: "grid", gap: 6 }}>
+          <span>Email</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@datox.com"
+            autoComplete="username"
+            style={{ width: "100%", padding: 10, border: "1px solid #ddd", borderRadius: 10 }}
+          />
+        </label>
+
+        <label style={{ display: "grid", gap: 6 }}>
           <span>Password</span>
           <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
             <input
@@ -46,6 +59,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Admin password"
+              autoComplete="current-password"
               style={{ width: "100%", padding: "10px 44px 10px 10px", border: "1px solid #ddd", borderRadius: 10 }}
             />
             <button
