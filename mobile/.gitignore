@@ -1,3 +1,6 @@
+# Local remote API config (split setup)
+.env.remote
+
 # Miscellaneous
 *.class
 *.log

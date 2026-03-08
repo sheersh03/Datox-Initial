@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_store.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -24,9 +25,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> connect() async {
     final token = await SecureStore.read('token');
+    final wsBase = ApiClient.wsBaseUrl;
     channel = WebSocketChannel.connect(
       Uri.parse(
-          'ws://localhost:8080/ws/chat?match_id=${widget.matchId}&token=$token'),
+          '$wsBase/ws/chat?match_id=${widget.matchId}&token=$token'),
     );
 
     channel.stream.listen((event) {

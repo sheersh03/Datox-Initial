@@ -15,6 +15,14 @@ class ApiClient {
     return 'http://localhost:8080/api/v1';
   }
 
+  /// WebSocket base URL (e.g. ws://192.168.1.5:8080) derived from API base.
+  /// Used for chat and other WS endpoints.
+  static String get wsBaseUrl {
+    final api = _resolveBaseUrl();
+    final uri = Uri.parse(api);
+    return 'ws://${uri.host}:${uri.port}';
+  }
+
   static final dio = Dio(
     BaseOptions(
       baseUrl: _resolveBaseUrl(),
