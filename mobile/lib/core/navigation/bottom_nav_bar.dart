@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// Theme colors for bottom nav (premium light blue + pink).
-const _bg = Color(0xFFF4F8FF);
-const _activeIcon = Color(0xFF3A86FF);
-const _inactiveIcon = Color(0xFF9CA3AF);
-const _pinkAccent = Color(0xFFFFE6F0);
-const _textPrimary = Color(0xFF1A1A1A);
-
-enum NavTab {
-  profile,
-  discover,
-  people,
-  likedYou,
-  chats,
-}
+const _dockBg = Color(0xFFF7F9FD);
+const _inactiveButton = Color(0xFFE5E7EB);
+const _activeBubble = Color(0xFFFFFFFF);
+const _inactiveIcon = Color(0xFFFFFFFF);
+const _activeIcon = Color(0xFF7D828D);
+const _track = Color(0xFF9A9A9A);
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({
@@ -26,64 +18,146 @@ class BottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const int _profileIndex = 0;
-  static const int _discoverIndex = 1;
-  static const int _peopleIndex = 2;
-  static const int _likedYouIndex = 3;
-  static const int _chatsIndex = 4;
+  static const _items = <_NavItemData>[
+    _NavItemData(
+      materialIcon: Icons.search_rounded,
+      semanticsLabel: 'Discovery',
+    ),
+    _NavItemData(
+      icon: FontAwesomeIcons.solidHeart,
+      semanticsLabel: 'Liked You',
+    ),
+    _NavItemData(
+      materialIcon: Icons.layers_rounded,
+      semanticsLabel: 'Cypher',
+    ),
+    _NavItemData(
+      icon: FontAwesomeIcons.comment,
+      semanticsLabel: 'Chats',
+    ),
+    _NavItemData(
+      icon: FontAwesomeIcons.user,
+      semanticsLabel: 'Profile',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
       decoration: BoxDecoration(
-        color: _bg,
+        color: _dockBg,
+        borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _NavItem(
-                icon: FontAwesomeIcons.user,
-                label: 'Profile',
-                isSelected: currentIndex == _profileIndex,
-                onTap: () => onTap(_profileIndex),
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.compass,
-                label: 'Discover',
-                isSelected: currentIndex == _discoverIndex,
-                onTap: () => onTap(_discoverIndex),
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.heart,
-                label: 'People',
-                isSelected: currentIndex == _peopleIndex,
-                isCenter: true,
-                onTap: () => onTap(_peopleIndex),
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.solidHeart,
-                label: 'Liked You',
-                isSelected: currentIndex == _likedYouIndex,
-                onTap: () => onTap(_likedYouIndex),
-              ),
-              _NavItem(
-                icon: FontAwesomeIcons.comment,
-                label: 'Chats',
-                isSelected: currentIndex == _chatsIndex,
-                onTap: () => onTap(_chatsIndex),
-              ),
-            ],
+        child: SizedBox(
+          height: 110,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const bubbleSize = 82.0;
+              const buttonSize = 54.0;
+              final slotWidth = constraints.maxWidth / _items.length;
+              final bubbleLeft =
+                  (slotWidth * currentIndex) + ((slotWidth - bubbleSize) / 2);
+
+              return Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                    left: bubbleLeft,
+                    top: 12,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 320),
+                      curve: Curves.easeOutCubic,
+                      width: bubbleSize,
+                      height: bubbleSize,
+                      decoration: BoxDecoration(
+                        color: _activeBubble,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 28,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.92, end: 1),
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOutBack,
+                        builder: (context, scale, child) {
+                          return Transform.scale(scale: scale, child: child);
+                        },
+                        child: _NavGlyph(
+                          item: _items[currentIndex],
+                          color: _activeIcon,
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: Row(
+                      children: List.generate(_items.length, (index) {
+                        final isSelected = index == currentIndex;
+                        return Expanded(
+                          child: Center(
+                            child: _TapAnimatedButton(
+                              onTap: () => onTap(index),
+                              semanticsLabel: _items[index].semanticsLabel,
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 180),
+                                curve: Curves.easeOut,
+                                opacity: isSelected ? 0 : 1,
+                                child: IgnorePointer(
+                                  ignoring: isSelected,
+                                  child: Container(
+                                    width: buttonSize,
+                                    height: buttonSize,
+                                    decoration: const BoxDecoration(
+                                      color: _inactiveButton,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: _NavGlyph(
+                                      item: _items[index],
+                                      color: _inactiveIcon,
+                                      size: 22,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                  Align(
+                    alignment: const Alignment(0, 0.92),
+                    child: Container(
+                      width: 300,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _track,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -91,66 +165,96 @@ class BottomNavBar extends StatelessWidget {
   }
 }
 
-class _NavItem extends StatelessWidget {
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
+class _TapAnimatedButton extends StatefulWidget {
+  const _TapAnimatedButton({
+    required this.child,
     required this.onTap,
-    this.isCenter = false,
+    required this.semanticsLabel,
   });
 
-  final IconData icon;
-  final String label;
-  final bool isSelected;
+  final Widget child;
   final VoidCallback onTap;
-  final bool isCenter;
+  final String semanticsLabel;
+
+  @override
+  State<_TapAnimatedButton> createState() => _TapAnimatedButtonState();
+}
+
+class _TapAnimatedButtonState extends State<_TapAnimatedButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value) return;
+    setState(() => _pressed = value);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? _activeIcon : _inactiveIcon;
-
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isCenter && isSelected)
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: _pinkAccent.withValues(alpha: 0.6),
-                      shape: BoxShape.circle,
-                    ),
-                    child: FaIcon(icon, size: 22, color: _activeIcon),
-                  )
-                else
-                  FaIcon(
-                    icon,
-                    size: isCenter ? 24 : 22,
-                    color: color,
-                  ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? _textPrimary : _inactiveIcon,
-                  ),
-                ),
-              ],
-            ),
+    return Semantics(
+      button: true,
+      label: widget.semanticsLabel,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _setPressed(true),
+        onTapCancel: () => _setPressed(false),
+        onTapUp: (_) => _setPressed(false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? 0.9 : 1,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          child: AnimatedSlide(
+            offset: _pressed ? const Offset(0, 0.04) : Offset.zero,
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOutCubic,
+            child: widget.child,
           ),
         ),
       ),
     );
   }
+}
+
+class _NavGlyph extends StatelessWidget {
+  const _NavGlyph({
+    required this.item,
+    required this.color,
+    required this.size,
+  });
+
+  final _NavItemData item;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    if (item.materialIcon != null) {
+      return Icon(
+        item.materialIcon,
+        size: size,
+        color: color,
+      );
+    }
+
+    return FaIcon(
+      item.icon!,
+      size: size,
+      color: color,
+    );
+  }
+}
+
+class _NavItemData {
+  const _NavItemData({
+    this.icon,
+    this.materialIcon,
+    required this.semanticsLabel,
+  }) : assert(
+         icon != null || materialIcon != null,
+         'Either icon or materialIcon must be provided.',
+       );
+
+  final IconData? icon;
+  final IconData? materialIcon;
+  final String semanticsLabel;
 }

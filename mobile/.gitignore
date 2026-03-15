@@ -1,6 +1,9 @@
 # Local remote API config (split setup)
 .env.remote
 
+# Watch script temp file
+.flutter_watch.pid
+
 # Miscellaneous
 *.class
 *.log

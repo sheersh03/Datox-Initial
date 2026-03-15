@@ -1,19 +1,11 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import '../navigation/navigation_service.dart';
 import 'api_errors.dart';
+import 'api_base_url.dart';
 import '../storage/secure_store.dart';
 
 class ApiClient {
-  static String _resolveBaseUrl() {
-    const configured = String.fromEnvironment('API_BASE_URL');
-    if (configured.isNotEmpty) return configured;
-
-    if (kIsWeb) return 'http://localhost:8080/api/v1';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8080/api/v1';
-    return 'http://localhost:8080/api/v1';
-  }
+  static String _resolveBaseUrl() => getApiBaseUrl();
 
   /// WebSocket base URL (e.g. ws://192.168.1.5:8080) derived from API base.
   /// Used for chat and other WS endpoints.

@@ -88,17 +88,22 @@ class _LoginScreenState extends State<LoginScreen> {
           _buildBackground(),
           _buildOverlay(),
           SafeArea(
-            child: Column(
-              children: [
-                _buildTopSection(context),
-                const Spacer(),
-                _buildContent(context),
-                const SizedBox(height: 24),
-                _buildButtons(context),
-                const SizedBox(height: 32),
-                _buildBottomLinks(context),
-                const SizedBox(height: 24),
-              ],
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 24),
+                child: Column(
+                  children: [
+                    _buildTopSection(context),
+                    const SizedBox(height: 48),
+                    _buildContent(context),
+                    const SizedBox(height: 24),
+                    _buildButtons(context),
+                    const SizedBox(height: 32),
+                    _buildBottomLinks(context),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

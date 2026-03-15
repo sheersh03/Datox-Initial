@@ -14,7 +14,7 @@ class MainNavigationShell extends StatefulWidget {
     this.skipLocationRedirect = false,
   });
 
-  /// Default to People (center) tab.
+  /// Default to Cypher (center) tab.
   final int initialIndex;
 
   /// When true, discovery screens show error instead of redirecting to location.
@@ -34,14 +34,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     _currentIndex = widget.initialIndex;
     final skip = widget.skipLocationRedirect;
     _screens = [
-      const ProfileScreen(),
-      DiscoveryScreen(skipLocationRedirect: skip),
       DiscoveryScreen(skipLocationRedirect: skip),
       const LikesScreen(),
+      DiscoveryScreen(skipLocationRedirect: skip),
       const ChatListScreen(),
+      const ProfileScreen(),
     ];
   }
-
 
   void _onTabTapped(int index) {
     if (_currentIndex == index) return;

@@ -31,6 +31,14 @@
 
   <title>datox</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Backend config: "true" = Mac local (localhost:8080), "false" = Windows remote -->
+  <meta name="datox-backend-local" content="true">
+  <!-- When datox-backend-local is false, use this URL (e.g. Windows IP in split setup) -->
+  <meta name="datox-api-base" content="http://192.168.0.104:8080/api/v1">
+
+  <!-- Passkeys Web SDK - required for passkey support on web -->
+  <script src="https://github.com/corbado/flutter-passkeys/releases/download/2.5.0/bundle.js"></script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

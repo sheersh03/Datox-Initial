@@ -25,6 +25,7 @@ dependencies:
   flutter_animate: ^4.5.0
   cached_network_image: ^3.4.1
   font_awesome_flutter: ^10.7.0
+  google_fonts: ^6.3.2
   passkeys: ^2.17.4
 
   # Utils
@@ -38,3 +39,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

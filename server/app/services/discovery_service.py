@@ -12,6 +12,8 @@ from app.models.subscription import Subscription
 from app.services.subscription_service import get_tier, unlimited_likes
 from app.models.prompt import Prompt  # defined similarly
 from app.models.user import User
+from app.models.photo import Photo
+from app.services.storage_service import public_url
 
 def _haversine_km(lat1, lon1, lat2, lon2):
     if None in (lat1, lon1, lat2, lon2):
@@ -127,6 +129,13 @@ def candidates(db: Session, user_id: str, limit: int = 20):
     scored.sort(key=lambda x: x[0], reverse=True)
     out = []
     for score, dist, p in scored[:limit]:
+        photos = (
+            db.query(Photo)
+            .filter(Photo.user_id == p.user_id)
+            .order_by(Photo.is_primary.desc(), Photo.created_at.asc())
+            .all()
+        )
+        primary_photo = photos[0] if photos else None
         out.append({
             "user_id": p.user_id,
             "name": p.name,
@@ -138,5 +147,6 @@ def candidates(db: Session, user_id: str, limit: int = 20):
             "approx_location": {"lat": p.approx_lat, "lng": p.approx_lng},
             "distance_km": round(dist, 1),
             "verification_status": p.verification_status,
+            "primary_photo_url": public_url(primary_photo.s3_key) if primary_photo else None,
         })
     return out

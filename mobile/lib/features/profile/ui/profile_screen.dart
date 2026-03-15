@@ -87,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text(
           'Profile',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 28,
             fontWeight: FontWeight.w600,
             color: _textPrimary,
           ),
@@ -144,7 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
               style: const TextStyle(
-                fontSize: 28,
+                fontSize: 34,
                 fontWeight: FontWeight.w600,
                 color: _primaryBlue,
               ),
@@ -158,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 24,
                     fontWeight: FontWeight.w600,
                     color: _textPrimary,
                   ),
@@ -167,7 +167,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(
                   '$age years',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 18,
                     color: _subtext,
                   ),
                 ),
@@ -189,7 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       '$percent%',
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: _subtext,
                       ),
@@ -200,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Text(
                   'Profile completion',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 15,
                     color: _subtext,
                   ),
                 ),
@@ -230,6 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               selectedColor: _accentPink.withValues(alpha: 0.6),
               labelStyle: TextStyle(
                 color: _selectedTabIndex == i ? _primaryBlue : _subtext,
+                fontSize: 18,
                 fontWeight:
                     _selectedTabIndex == i ? FontWeight.w600 : FontWeight.w500,
               ),
@@ -261,7 +262,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Center(
         child: Text(
           '$title coming soon.',
-          style: const TextStyle(color: _subtext),
+          style: const TextStyle(
+            color: _subtext,
+            fontSize: 18,
+          ),
         ),
       ),
     );

@@ -7,8 +7,15 @@ class LikesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Liked You')),
-      body: const Center(
-        child: Text('People who liked you will appear here.'),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Text(
+            'People who liked you will appear here.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
       ),
     );
   }
