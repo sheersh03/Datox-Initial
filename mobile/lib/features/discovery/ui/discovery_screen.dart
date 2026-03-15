@@ -95,7 +95,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           : null;
 
       if (like && apiErr?.code == 'LIKE_LIMIT') {
-        context.go('/paywall');
+        context.go('/paywall?context=like_limit');
         return;
       }
 
@@ -446,7 +446,7 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
               left: 14,
               child: _TopOverlayButton(
                 icon: FontAwesomeIcons.sliders,
-                onTap: () => context.push('/paywall'),
+                onTap: () => context.push('/paywall?context=general'),
               ),
             ),
             Positioned(

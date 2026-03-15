@@ -7,7 +7,8 @@ from app.core.errors import api_error
 from app.core.security import auth_user_id
 from app.services.subscription_service import (
     set_tier, get_tier,
-    can_see_likes_you, unlimited_likes, has_read_receipts, has_undo_swipe, weekly_boosts
+    can_see_likes_you, unlimited_likes, has_read_receipts, has_undo_swipe, weekly_boosts,
+    can_access_cypher,
 )
 from app.services.addon_service import grant_entitlement
 
@@ -53,6 +54,7 @@ def my_entitlements(db: Session = Depends(get_db), user_id: str = Depends(auth_u
             "has_read_receipts": has_read_receipts(tier),
             "has_undo_swipe": has_undo_swipe(tier),
             "weekly_boosts": weekly_boosts(tier),
+            "can_access_cypher": can_access_cypher(tier),
         }
     }
 

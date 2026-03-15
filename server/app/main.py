@@ -14,6 +14,7 @@ from app.api.routers import (
     admin,
     passkey,
     addons,
+    cypher,
 )
 
 app = FastAPI(
@@ -58,6 +59,7 @@ app.include_router(admin.router, prefix=f"{API_PREFIX}/admin")
 app.include_router(admin_auth_router, prefix=f"{API_PREFIX}/admin")
 app.include_router(passkey.router, prefix=f"{API_PREFIX}/passkey")
 app.include_router(addons.router, prefix=f"{API_PREFIX}/addons")
+app.include_router(cypher.router, prefix=f"{API_PREFIX}/cypher")
 
 # ---------------------------------
 # Health

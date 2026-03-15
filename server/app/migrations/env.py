@@ -45,6 +45,11 @@ from app.models.ban_history import BanHistory
 from app.models.verification_review import VerificationReview
 from app.models.subscription_event import SubscriptionEvent
 from app.models.admin_refresh_token import AdminRefreshToken
+from app.models.cypher_profile import CypherProfile
+from app.models.cypher_reaction import CypherReaction
+from app.models.cypher_match import CypherMatch
+from app.models.cypher_message import CypherMessage
+from app.models.cypher_reveal_request import CypherRevealRequest
 
 target_metadata = Base.metadata
 

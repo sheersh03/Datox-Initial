@@ -2,6 +2,12 @@
 class Env {
   static const revenueCatApiKey =
       String.fromEnvironment('REVENUECAT_API_KEY', defaultValue: '');
+  static const termsUrl =
+      String.fromEnvironment('TERMS_URL', defaultValue: 'https://example.com/terms');
+  static const privacyUrl =
+      String.fromEnvironment('PRIVACY_URL', defaultValue: 'https://example.com/privacy');
+  static const supportUrl =
+      String.fromEnvironment('SUPPORT_URL', defaultValue: 'https://example.com/support');
 
   static const premiumPlusProductId =
       String.fromEnvironment('PREMIUM_PLUS_PRODUCT_ID', defaultValue: 'premium_plus');

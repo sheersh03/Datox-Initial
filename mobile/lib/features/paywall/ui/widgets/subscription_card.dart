@@ -14,6 +14,8 @@ class SubscriptionCard extends StatelessWidget {
     required this.description,
     required this.price,
     required this.onTap,
+    this.buttonLabel,
+    this.highlightLabel,
     this.isSelected = false,
     this.isActive = false,
     this.isLoading = false,
@@ -23,6 +25,8 @@ class SubscriptionCard extends StatelessWidget {
   final String description;
   final String price;
   final VoidCallback onTap;
+  final String? buttonLabel;
+  final String? highlightLabel;
   final bool isSelected;
   final bool isActive;
   final bool isLoading;
@@ -78,6 +82,27 @@ class SubscriptionCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (highlightLabel != null && highlightLabel!.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _primaryBlue,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          highlightLabel!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                     if (isActive) ...[
                       const SizedBox(width: 8),
                       const FaIcon(
@@ -110,17 +135,17 @@ class SubscriptionCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 24,
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 24,
                             width: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               color: Colors.white,
                             ),
-                          )
-                        : Text(
-                            isActive ? 'Active' : 'Subscribe · $price',
+                              )
+                            : Text(
+                            buttonLabel ?? (isActive ? 'Active' : 'Subscribe · $price'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

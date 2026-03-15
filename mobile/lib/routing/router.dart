@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/navigation/main_navigation_shell.dart';
 import '../core/navigation/navigation_service.dart';
@@ -95,6 +94,13 @@ final appRouter = GoRouter(
       path: '/chat/:id',
       builder: (_, s) => ChatScreen(matchId: s.pathParameters['id']!),
     ),
-    GoRoute(path: '/paywall', builder: (_, __) => const PaywallScreen()),
+    GoRoute(
+      path: '/paywall',
+      builder: (_, s) => PaywallScreen(
+        contextType: PaywallContextX.fromQuery(
+          s.uri.queryParameters['context'],
+        ),
+      ),
+    ),
   ],
 );

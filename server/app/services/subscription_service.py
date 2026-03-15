@@ -39,3 +39,8 @@ def has_undo_swipe(tier: str) -> bool:
 
 def weekly_boosts(tier: str) -> int:
     return 1 if tier == "plus" else 0
+
+
+def can_access_cypher(tier: str) -> bool:
+    """Cypher Mode is a premium feature for plus tier."""
+    return tier == "plus"

@@ -1,4 +1,4 @@
- import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -71,16 +71,22 @@ class _LikesScreenState extends State<LikesScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          if (e is DioException && e.error is ApiException) {
-            _error = (e.error as ApiException).message;
-          } else {
-            _error = 'Failed to load who liked you.';
-          }
-        });
+      if (!mounted) return;
+      if (e is DioException && e.error is ApiException) {
+        final apiErr = e.error as ApiException;
+        if (apiErr.statusCode == 402 && apiErr.code == 'PAYWALL_REQUIRED') {
+          context.go('/paywall?context=liked_you');
+          return;
+        }
       }
+      setState(() {
+        _loading = false;
+        if (e is DioException && e.error is ApiException) {
+          _error = (e.error as ApiException).message;
+        } else {
+          _error = 'Failed to load who liked you.';
+        }
+      });
     }
   }
 

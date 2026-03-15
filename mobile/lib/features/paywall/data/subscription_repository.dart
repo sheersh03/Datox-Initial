@@ -55,6 +55,24 @@ class SubscriptionRepository {
     if (!_configured) return [];
 
     try {
+      final offerings = await Purchases.getOfferings();
+      final current = offerings.current;
+      if (current != null) {
+        final products = <StoreProduct>[];
+        final seen = <String>{};
+        for (final package in current.availablePackages) {
+          final product = package.storeProduct;
+          if (seen.add(product.identifier)) {
+            products.add(product);
+          }
+        }
+        if (products.isNotEmpty) {
+          return products;
+        }
+      }
+    } catch (_) {}
+
+    try {
       final ids = [
         Env.premiumPlusProductId,
         Env.premiumProductId,
