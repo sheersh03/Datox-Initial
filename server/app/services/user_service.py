@@ -7,6 +7,7 @@ from app.db.session import SessionLocal
 from app.models.prompt import Prompt
 from app.models.user import User
 from app.models.profile import Profile
+from app.models.like import Like
 
 fake = Faker()
 
@@ -40,6 +41,8 @@ def seed(db: Session, count: int = 40):
 
     # 2️⃣ Create profiles linked to users
     for user in users:
+        lat = 28.6 + fake.random.uniform(-0.1, 0.1)
+        lng = 77.2 + fake.random.uniform(-0.1, 0.1)
         profile = Profile(
             user_id=user.id,
             name=fake.first_name(),
@@ -48,8 +51,10 @@ def seed(db: Session, count: int = 40):
             intent=fake.random_element(["dating", "friends", "marriage"]),
             bio=fake.text(max_nb_chars=200),
             city=fake.city(),
-            lat=28.6 + fake.random.uniform(-0.1, 0.1),
-            lng=77.2 + fake.random.uniform(-0.1, 0.1),
+            lat=lat,
+            lng=lng,
+            approx_lat=_round_loc(lat),
+            approx_lng=_round_loc(lng),
             pref_gender=None,
         )
         db.add(profile)
@@ -158,10 +163,70 @@ def seed_discovery_candidates(
     return created
 
 
+def set_all_profile_locations_to_seed_region(db: Session) -> int:
+    """Set all profiles to seed region (28.6, 77.2) and distance_km=100 for discovery in dev."""
+    profiles = db.query(Profile).all()
+    for p in profiles:
+        p.lat = 28.6
+        p.lng = 77.2
+        p.approx_lat = _round_loc(28.6)
+        p.approx_lng = _round_loc(77.2)
+        p.distance_km = 100
+    db.commit()
+    return len(profiles)
+
+
+def seed_likes_you(db: Session, per_user: int = 6) -> int:
+    """For each user with a profile, add `per_user` likes from other users (who liked them)."""
+    from random import sample
+
+    user_ids = [r[0] for r in db.query(Profile.user_id).all()]
+    if len(user_ids) < 2:
+        return 0
+    created = 0
+    for to_user_id in user_ids:
+        others = [u for u in user_ids if u != to_user_id]
+        k = min(per_user, len(others))
+        if k == 0:
+            continue
+        from_ids = sample(others, k)
+        for from_user_id in from_ids:
+            exists = (
+                db.query(Like.id)
+                .filter(
+                    Like.from_user_id == from_user_id,
+                    Like.to_user_id == to_user_id,
+                )
+                .first()
+            )
+            if not exists:
+                db.add(
+                    Like(
+                        id=str(uuid.uuid4()),
+                        from_user_id=from_user_id,
+                        to_user_id=to_user_id,
+                        is_like=True,
+                    )
+                )
+                created += 1
+    db.commit()
+    return created
+
+
 if __name__ == "__main__":
+    import sys
+    count = 55
+    if len(sys.argv) > 1:
+        try:
+            count = max(1, int(sys.argv[1]))
+        except ValueError:
+            count = 55
     db = SessionLocal()
     try:
-        seed(db)
-        print("✅ Seed data created successfully")
+        seed(db, count=count)
+        n = set_all_profile_locations_to_seed_region(db)
+        print(f"✅ Set {n} profile(s) to seed region for discovery")
+        likes_created = seed_likes_you(db, per_user=6)
+        print(f"✅ Seed data created: {count} profiles, {likes_created} \"liked you\" likes")
     finally:
         db.close()
