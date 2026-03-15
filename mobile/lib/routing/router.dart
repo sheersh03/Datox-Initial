@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/navigation/main_navigation_shell.dart';
 import '../core/navigation/navigation_service.dart';
@@ -44,7 +45,47 @@ final appRouter = GoRouter(
       builder: (_, s) {
         final skip = s.uri.queryParameters['skip_location'] == '1';
         return MainNavigationShell(
-          initialIndex: 2,
+          currentIndex: 0,
+          skipLocationRedirect: skip,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/likes',
+      builder: (_, s) {
+        final skip = s.uri.queryParameters['skip_location'] == '1';
+        return MainNavigationShell(
+          currentIndex: 1,
+          skipLocationRedirect: skip,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/cypher',
+      builder: (_, s) {
+        final skip = s.uri.queryParameters['skip_location'] == '1';
+        return MainNavigationShell(
+          currentIndex: 2,
+          skipLocationRedirect: skip,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/chats',
+      builder: (_, s) {
+        final skip = s.uri.queryParameters['skip_location'] == '1';
+        return MainNavigationShell(
+          currentIndex: 3,
+          skipLocationRedirect: skip,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (_, s) {
+        final skip = s.uri.queryParameters['skip_location'] == '1';
+        return MainNavigationShell(
+          currentIndex: 4,
           skipLocationRedirect: skip,
         );
       },

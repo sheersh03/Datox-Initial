@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -441,46 +442,28 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
               ),
             ),
             // ── Top overlay (painted AFTER BackdropFilter — never blurred) ─
-            const Positioned(
-              top: 76,
-              left: 16,
-              child: _LivePill(),
-            ),
-            // Heading pill — centered, independent, above BackdropFilter layer
+            // Heading — bare white text in HaloHandletter, no container
             Positioned(
-              top: 14,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.72),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: _white.withValues(alpha: 0.35),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: const Text(
-                    'Discover your vibe',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      height: 1.0,
-                      shadows: [
-                        Shadow(
-                          color: Color(0xCC000000),
-                          blurRadius: 16,
-                        ),
-                      ],
-                    ),
+              top: 12,
+              left: 60,
+              right: 60,
+              child: const Center(
+                child: Text(
+                  'Discover your vibe',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _white,
+                    fontSize: 48,
+                    fontFamily: 'HaloHandletter',
+                    height: 1.0,
+                    shadows: [
+                      Shadow(
+                        color: Color(0xDD000000),
+                        blurRadius: 12,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -490,7 +473,7 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
               left: 14,
               child: _TopOverlayButton(
                 icon: FontAwesomeIcons.sliders,
-                onTap: () {},
+                onTap: () => context.push('/paywall'),
               ),
             ),
             Positioned(
@@ -667,43 +650,6 @@ class _TopOverlayButton extends StatelessWidget {
   }
 }
 
-class _LivePill extends StatelessWidget {
-  const _LivePill();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.24),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: _white.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: const BoxDecoration(
-              color: Color(0xFF60A5FA),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'LIVE',
-            style: TextStyle(
-              color: _white,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _DiscoveryActions extends StatelessWidget {
   const _DiscoveryActions({
@@ -726,18 +672,21 @@ class _DiscoveryActions extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _DiscoveryActionButton(
+          kind: _DiscoveryActionKind.rewind,
           icon: Icons.replay_rounded,
           iconColor: _actionBlueGray,
           borderColor: _actionBlueGray.withValues(alpha: 0.7),
           onTap: disabled ? null : onRewind,
         ),
         _DiscoveryActionButton(
+          kind: _DiscoveryActionKind.pass,
           icon: Icons.close_rounded,
           iconColor: _actionRed,
           borderColor: _actionRed.withValues(alpha: 0.7),
           onTap: disabled ? null : onPass,
         ),
         _DiscoveryActionButton(
+          kind: _DiscoveryActionKind.like,
           icon: Icons.favorite_rounded,
           iconColor: _white,
           fillColor: _actionPurple,
@@ -745,6 +694,7 @@ class _DiscoveryActions extends StatelessWidget {
           onTap: disabled ? null : onLike,
         ),
         _DiscoveryActionButton(
+          kind: _DiscoveryActionKind.boost,
           icon: Icons.star_rounded,
           iconColor: _actionPink,
           borderColor: _actionPink.withValues(alpha: 0.9),
@@ -755,8 +705,16 @@ class _DiscoveryActions extends StatelessWidget {
   }
 }
 
+enum _DiscoveryActionKind {
+  rewind,
+  pass,
+  like,
+  boost,
+}
+
 class _DiscoveryActionButton extends StatefulWidget {
   const _DiscoveryActionButton({
+    required this.kind,
     required this.icon,
     required this.iconColor,
     required this.onTap,
@@ -765,6 +723,7 @@ class _DiscoveryActionButton extends StatefulWidget {
     this.isPrimary = false,
   });
 
+  final _DiscoveryActionKind kind;
   final IconData icon;
   final Color iconColor;
   final Color? borderColor;
@@ -776,12 +735,35 @@ class _DiscoveryActionButton extends StatefulWidget {
   State<_DiscoveryActionButton> createState() => _DiscoveryActionButtonState();
 }
 
-class _DiscoveryActionButtonState extends State<_DiscoveryActionButton> {
+class _DiscoveryActionButtonState extends State<_DiscoveryActionButton>
+    with SingleTickerProviderStateMixin {
   bool _pressed = false;
+  late final AnimationController _fxController;
+
+  @override
+  void initState() {
+    super.initState();
+    _fxController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+  }
+
+  @override
+  void dispose() {
+    _fxController.dispose();
+    super.dispose();
+  }
 
   void _setPressed(bool value) {
     if (_pressed == value) return;
     setState(() => _pressed = value);
+  }
+
+  void _handleTap() {
+    if (widget.onTap == null) return;
+    _fxController.forward(from: 0);
+    widget.onTap!();
   }
 
   @override
@@ -789,43 +771,134 @@ class _DiscoveryActionButtonState extends State<_DiscoveryActionButton> {
     final size = widget.isPrimary ? 82.0 : 66.0;
     final iconSize = widget.isPrimary ? 30.0 : 26.0;
 
-    return GestureDetector(
-      onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
-      onTapCancel: widget.onTap == null ? null : () => _setPressed(false),
-      onTapUp: widget.onTap == null ? null : (_) => _setPressed(false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.94 : 1,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOutCubic,
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: widget.fillColor,
-            shape: BoxShape.circle,
-            border: widget.borderColor == null
-                ? null
-                : Border.all(color: widget.borderColor!, width: 2.2),
-            boxShadow: [
-              BoxShadow(
-                color: widget.isPrimary
-                    ? _actionPurple.withValues(alpha: 0.26)
-                    : Colors.black.withValues(alpha: 0.06),
-                blurRadius: widget.isPrimary ? 20 : 14,
-                offset: const Offset(0, 8),
+    return AnimatedBuilder(
+      animation: _fxController,
+      builder: (context, child) {
+        final effect = Curves.easeOutBack.transform(_fxController.value);
+        final motion = _motionFor(effect);
+        final glowAlpha = _glowAlphaFor(effect);
+
+        return Transform.translate(
+          offset: motion.offset,
+          child: Transform.rotate(
+            angle: motion.rotation,
+            child: Transform.scale(
+              scale: (_pressed ? 0.94 : 1.0) * motion.scale,
+              child: GestureDetector(
+                onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
+                onTapCancel: widget.onTap == null ? null : () => _setPressed(false),
+                onTapUp: widget.onTap == null ? null : (_) => _setPressed(false),
+                onTap: _handleTap,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  curve: Curves.easeOutCubic,
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    color: widget.fillColor,
+                    shape: BoxShape.circle,
+                    border: widget.borderColor == null
+                        ? null
+                        : Border.all(color: widget.borderColor!, width: 2.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _shadowColor(glowAlpha),
+                        blurRadius: widget.isPrimary ? 28 : 18,
+                        spreadRadius: widget.isPrimary ? 1.5 : 0,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Transform.rotate(
+                      angle: motion.iconRotation,
+                      child: Icon(
+                        widget.icon,
+                        color: widget.iconColor,
+                        size: iconSize,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-          child: Icon(
-            widget.icon,
-            color: widget.iconColor,
-            size: iconSize,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
+
+  Color _shadowColor(double glowAlpha) {
+    if (widget.kind == _DiscoveryActionKind.like) {
+      return _actionPurple.withValues(alpha: 0.22 + (0.16 * glowAlpha));
+    }
+    if (widget.kind == _DiscoveryActionKind.boost) {
+      return _actionPink.withValues(alpha: 0.08 + (0.14 * glowAlpha));
+    }
+    if (widget.kind == _DiscoveryActionKind.pass) {
+      return _actionRed.withValues(alpha: 0.04 + (0.08 * glowAlpha));
+    }
+    return Colors.black.withValues(alpha: 0.06 + (0.04 * glowAlpha));
+  }
+
+  double _glowAlphaFor(double effect) {
+    switch (widget.kind) {
+      case _DiscoveryActionKind.like:
+        return effect;
+      case _DiscoveryActionKind.boost:
+        return effect * 0.9;
+      case _DiscoveryActionKind.pass:
+        return effect * 0.6;
+      case _DiscoveryActionKind.rewind:
+        return effect * 0.5;
+    }
+  }
+
+  _ButtonMotion _motionFor(double effect) {
+    switch (widget.kind) {
+      case _DiscoveryActionKind.rewind:
+        return _ButtonMotion(
+          scale: 1 + (0.04 * effect),
+          rotation: -0.22 * effect,
+          iconRotation: -0.38 * effect,
+          offset: Offset.zero,
+        );
+      case _DiscoveryActionKind.pass:
+        final shake = math.sin(effect * math.pi * 3) * 7 * (1 - effect);
+        return _ButtonMotion(
+          scale: 1 + (0.02 * effect),
+          rotation: -0.04 * effect,
+          iconRotation: 0,
+          offset: Offset(shake, 0),
+        );
+      case _DiscoveryActionKind.like:
+        return _ButtonMotion(
+          scale: 1 + (0.10 * effect),
+          rotation: 0,
+          iconRotation: 0,
+          offset: Offset(0, -3 * effect),
+        );
+      case _DiscoveryActionKind.boost:
+        return _ButtonMotion(
+          scale: 1 + (0.06 * effect),
+          rotation: 0.08 * effect,
+          iconRotation: 0.18 * effect,
+          offset: Offset(0, -2 * effect),
+        );
+    }
+  }
+}
+
+class _ButtonMotion {
+  const _ButtonMotion({
+    required this.scale,
+    required this.rotation,
+    required this.iconRotation,
+    required this.offset,
+  });
+
+  final double scale;
+  final double rotation;
+  final double iconRotation;
+  final Offset offset;
 }

@@ -113,7 +113,7 @@ class BottomNavBar extends StatelessWidget {
                         final isSelected = index == currentIndex;
                         return Expanded(
                           child: Center(
-                            child: _TapAnimatedButton(
+                            child: _NavTapTarget(
                               onTap: () => onTap(index),
                               semanticsLabel: _items[index].semanticsLabel,
                               child: AnimatedOpacity(
@@ -165,8 +165,8 @@ class BottomNavBar extends StatelessWidget {
   }
 }
 
-class _TapAnimatedButton extends StatefulWidget {
-  const _TapAnimatedButton({
+class _NavTapTarget extends StatelessWidget {
+  const _NavTapTarget({
     required this.child,
     required this.onTap,
     required this.semanticsLabel,
@@ -177,39 +177,14 @@ class _TapAnimatedButton extends StatefulWidget {
   final String semanticsLabel;
 
   @override
-  State<_TapAnimatedButton> createState() => _TapAnimatedButtonState();
-}
-
-class _TapAnimatedButtonState extends State<_TapAnimatedButton> {
-  bool _pressed = false;
-
-  void _setPressed(bool value) {
-    if (_pressed == value) return;
-    setState(() => _pressed = value);
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: widget.semanticsLabel,
+      label: semanticsLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => _setPressed(true),
-        onTapCancel: () => _setPressed(false),
-        onTapUp: (_) => _setPressed(false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _pressed ? 0.9 : 1,
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOutCubic,
-          child: AnimatedSlide(
-            offset: _pressed ? const Offset(0, 0.04) : Offset.zero,
-            duration: const Duration(milliseconds: 120),
-            curve: Curves.easeOutCubic,
-            child: widget.child,
-          ),
-        ),
+        onTap: onTap,
+        child: child,
       ),
     );
   }
