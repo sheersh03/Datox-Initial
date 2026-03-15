@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -10,10 +9,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_errors.dart';
 import '../data/discovery_api.dart';
+import 'profile_detail_sheet.dart';
 
 const _bg = Color(0xFFF4F8FF);
 const _white = Colors.white;
-const _subtleBorder = Color(0x40FFFFFF);
 const _actionPurple = Color(0xFF6D4CFF);
 const _actionPink = Color(0xFFF59AD9);
 const _actionRed = Color(0xFFFF7A7A);
@@ -216,6 +215,15 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                           onPass: () => _swipe(false),
                           onLike: () => _swipe(true),
                           onBoost: () {},
+                          onPhotoTap: () => showDiscoveryProfileDetailSheet(
+                            context,
+                            profile: p,
+                            age: age,
+                            distance: distance,
+                            onPass: () => _swipe(false),
+                            onLike: () => _swipe(true),
+                            onBoost: () {},
+                          ),
                           dragProgress: progress,
                           swipeDirection: _cardOffsetDx.sign.toInt(),
                         ).animate().fadeIn(duration: 280.ms).slideY(begin: 0.03, end: 0),
@@ -242,6 +250,7 @@ class _DiscoveryProfileCard extends StatefulWidget {
     required this.onPass,
     required this.onLike,
     required this.onBoost,
+    required this.onPhotoTap,
     required this.dragProgress,
     required this.swipeDirection,
   });
@@ -254,6 +263,7 @@ class _DiscoveryProfileCard extends StatefulWidget {
   final VoidCallback onPass;
   final VoidCallback onLike;
   final VoidCallback onBoost;
+  final VoidCallback onPhotoTap;
   final double dragProgress;
   final int swipeDirection;
 
@@ -266,14 +276,7 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
   Widget build(BuildContext context) {
     final photoUrl = widget.profile['primary_photo_url'] as String?;
     final name = (widget.profile['name'] ?? 'Unknown').toString();
-    final city = (widget.profile['city'] ?? '').toString();
-    final bio = (widget.profile['bio'] ?? '').toString();
     final verified = widget.profile['verification_status'] == 'verified';
-    final subtitle = [
-      if (city.isNotEmpty) city,
-      if (widget.distance != null) '${widget.distance.toString()} km away',
-    ].join(' • ');
-    final chips = _buildChips(city: city, bio: bio);
 
     return Container(
       decoration: BoxDecoration(
@@ -295,17 +298,26 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
               photoUrl: photoUrl,
               seed: widget.profile['user_id']?.toString() ?? name,
             ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xCC000000),
-                    Color(0x00000000),
-                    Color(0xCC000000),
-                  ],
-                  stops: [0, 0.38, 1],
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: widget.onPhotoTap,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xCC000000),
+                      Color(0x00000000),
+                      Color(0xCC000000),
+                    ],
+                    stops: [0, 0.38, 1],
+                  ),
                 ),
               ),
             ),
@@ -315,117 +327,63 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
                 top: 110,
                 left: widget.swipeDirection > 0 ? null : 22,
                 right: widget.swipeDirection > 0 ? 22 : null,
-                child: Opacity(
-                  opacity: widget.dragProgress.clamp(0.0, 0.95).toDouble(),
-                  child: _SwipeHintBadge(
-                    label: widget.swipeDirection > 0 ? 'LIKE' : 'PASS',
-                    color:
-                        widget.swipeDirection > 0 ? _actionPurple : _actionRed,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: widget.dragProgress.clamp(0.0, 0.95).toDouble(),
+                    child: _SwipeHintBadge(
+                      label: widget.swipeDirection > 0 ? 'LIKE' : 'PASS',
+                      color:
+                          widget.swipeDirection > 0 ? _actionPurple : _actionRed,
+                    ),
                   ),
                 ),
               ),
-            // Bottom info — BackdropFilter blurs only image + gradient above
             Positioned(
-              left: 18,
-              right: 18,
-              bottom: 112,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
-                  color: Colors.white.withValues(alpha: 0.22),
-                  border: Border.all(color: _subtleBorder),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '$name, ${widget.age}',
-                              style: const TextStyle(
-                                color: _white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                height: 1.05,
-                              ),
+              left: 24,
+              right: 24,
+              bottom: 156,
+              child: IgnorePointer(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '$name, ${widget.age}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _white,
+                          fontSize: 52,
+                          fontFamily: 'HaloHandletter',
+                          height: 0.92,
+                          shadows: [
+                            Shadow(
+                              color: Color(0xD9000000),
+                              blurRadius: 18,
+                              offset: Offset(0, 4),
                             ),
-                          ),
-                          if (verified)
-                            Container(
-                              width: 22,
-                              height: 22,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF60A5FA),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: _white,
-                                size: 14,
-                              ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                      if (subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            color: _white.withValues(alpha: 0.92),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            height: 1.15,
-                          ),
+                    ),
+                    if (verified) ...[
+                      const SizedBox(width: 10),
+                      Container(
+                        width: 22,
+                        height: 22,
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF60A5FA),
+                          shape: BoxShape.circle,
                         ),
-                      ],
-                      if (chips.isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: chips
-                              .map(
-                                (chip) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 9,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _white.withValues(alpha: 0.24),
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(
-                                      color: _white.withValues(alpha: 0.18),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    chip,
-                                    style: const TextStyle(
-                                      color: _white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.3,
-                                      height: 1.0,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                        child: const Icon(
+                          Icons.check,
+                          color: _white,
+                          size: 14,
                         ),
-                      ],
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -447,23 +405,25 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
               top: 12,
               left: 60,
               right: 60,
-              child: const Center(
-                child: Text(
-                  'Discover your vibe',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: _white,
-                    fontSize: 48,
-                    fontFamily: 'HaloHandletter',
-                    height: 1.0,
-                    shadows: [
-                      Shadow(
-                        color: Color(0xDD000000),
-                        blurRadius: 12,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+              child: const IgnorePointer(
+                child: Center(
+                  child: Text(
+                    'Discover your vibe',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: _white,
+                      fontSize: 58,
+                      fontFamily: 'HaloHandletter',
+                      height: 1.0,
+                      shadows: [
+                        Shadow(
+                          color: Color(0xDD000000),
+                          blurRadius: 12,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -488,24 +448,6 @@ class _DiscoveryProfileCardState extends State<_DiscoveryProfileCard> {
         ),
       ),
     );
-  }
-
-  List<String> _buildChips({
-    required String city,
-    required String bio,
-  }) {
-    final chips = <String>[];
-    if (city.isNotEmpty) {
-      chips.add(city.toUpperCase());
-    }
-    for (final token in bio.split(RegExp(r'[\s,.;:!?-]+'))) {
-      final clean = token.trim();
-      if (clean.length >= 4) {
-        chips.add(clean.toUpperCase());
-      }
-      if (chips.length == 3) break;
-    }
-    return chips.take(3).toList();
   }
 }
 
@@ -558,6 +500,8 @@ class _ProfileImageLayer extends StatelessWidget {
       return CachedNetworkImage(
         imageUrl: photoUrl!,
         fit: BoxFit.cover,
+        memCacheWidth: 1440,
+        fadeInDuration: const Duration(milliseconds: 120),
         placeholder: (_, __) => _FallbackDiscoveryImage(seed: seed),
         errorWidget: (_, __, ___) => _FallbackDiscoveryImage(seed: seed),
       );
@@ -580,7 +524,7 @@ class _FallbackDiscoveryImage extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         Image.network(
-          'https://picsum.photos/seed/$seed/900/1400',
+          'https://picsum.photos/seed/$seed/1200/1800',
           fit: BoxFit.cover,
           errorBuilder: (_, __, ___) => const DecoratedBox(
             decoration: BoxDecoration(
