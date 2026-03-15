@@ -87,11 +87,24 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
         index++;
         _cardOffsetDx = 0;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _cardOffsetDx = 0);
-      if (like) {
+      final apiErr = e is DioException && e.error is ApiException
+          ? e.error as ApiException
+          : null;
+
+      if (like && apiErr?.code == 'LIKE_LIMIT') {
         context.go('/paywall');
+        return;
+      }
+
+      final message = apiErr?.message ?? 'Action failed. Please try again.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      if (like) {
+        return;
       }
     } finally {
       if (mounted) {

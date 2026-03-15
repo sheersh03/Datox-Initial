@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from app.api.deps import get_db, require_profile
 from app.api.openapi_responses import PROFILE_REQUIRED_RESPONSE
-from app.services.discovery_service import candidates
+from app.services.discovery_service import candidates, who_liked_me
 from app.services.match_service import swipe
 
 router = APIRouter(tags=["discovery"])
@@ -12,6 +12,20 @@ router = APIRouter(tags=["discovery"])
 class SwipeReq(BaseModel):
     to_user_id: str
     action: str = Field(pattern="^(like|pass)$")
+
+
+@router.get("/likes", responses={402: {"description": "Paywall - upgrade to see who liked you"}})
+def get_likes(
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(require_profile),
+):
+    return {
+        "ok": True,
+        "data": {
+            "items": who_liked_me(db, user_id, limit=limit)
+        }
+    }
 
 
 @router.get("/candidates", responses={409: PROFILE_REQUIRED_RESPONSE})
