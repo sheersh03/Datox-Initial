@@ -7,6 +7,7 @@ from app.api.routers import (
     profile,
     discovery,
     matching,
+    likes,
     chat,
     reports,
     subscriptions,
@@ -49,6 +50,7 @@ app.include_router(auth.router, prefix=f"{API_PREFIX}/auth")
 app.include_router(profile.router, prefix=f"{API_PREFIX}/profile")
 app.include_router(discovery.router, prefix=f"{API_PREFIX}/discovery")
 app.include_router(matching.router, prefix=f"{API_PREFIX}/matching")
+app.include_router(likes.router, prefix=f"{API_PREFIX}/likes")
 app.include_router(chat.router, prefix=f"{API_PREFIX}/chat")
 app.include_router(reports.router, prefix=f"{API_PREFIX}/reports")
 app.include_router(subscriptions.router, prefix=f"{API_PREFIX}/subscriptions")

@@ -1,17 +1,43 @@
-import 'package:cached_network_image/cached_network_image.dart';
+ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/network/api_errors.dart';
-import '../../discovery/data/discovery_api.dart';
-import '../../discovery/ui/profile_detail_sheet.dart';
+import '../../../theme/tokens.dart';
 import '../data/likes_api.dart';
 
+// Match discovery page colors
 const _bg = Color(0xFFF4F8FF);
-const _cardBg = Colors.white;
-const _textPrimary = Color(0xFF1F1F1F);
-const _textSecondary = Color(0xFF5F5F5F);
+const _white = Colors.white;
+const _actionPurple = Color(0xFF6D4CFF);
+const _actionPink = Color(0xFFF59AD9);
+const _actionRed = Color(0xFFFF7A7A);
+const _cardShadow = Color(0x1A000000);
+const _expiryRed = Color(0xFFE63946);
+const _premiumGradientStart = Color(0xFFA8D4FF);
+const _premiumGradientEnd = Color(0xFFE8C5E8);
+
+const _freePreviewLimit = 2;
+
+/// Format API liked_at (ISO string) as "X min ago" / "X hours ago" / "X days ago".
+String _formatLikedAgo(String? likedAtIso) {
+  if (likedAtIso == null || likedAtIso.isEmpty) return 'Recently';
+  try {
+    final then = DateTime.parse(likedAtIso).toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(then);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hour${diff.inHours == 1 ? '' : 's'} ago';
+    if (diff.inDays < 7) return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+    return '${diff.inDays ~/ 7} week${diff.inDays ~/ 7 == 1 ? '' : 's'} ago';
+  } catch (_) {
+    return 'Recently';
+  }
+}
 
 class LikesScreen extends StatefulWidget {
   const LikesScreen({super.key});
@@ -21,7 +47,7 @@ class LikesScreen extends StatefulWidget {
 }
 
 class _LikesScreenState extends State<LikesScreen> {
-  List<dynamic> _profiles = [];
+  List<dynamic> _items = [];
   bool _loading = true;
   String? _error;
 
@@ -40,53 +66,21 @@ class _LikesScreenState extends State<LikesScreen> {
       final items = await LikesApi.whoLikedMe();
       if (mounted) {
         setState(() {
-          _profiles = items;
+          _items = items;
           _loading = false;
         });
       }
     } catch (e) {
-      if (!mounted) return;
-      if (e is DioException && e.error is ApiException) {
-        final apiErr = e.error as ApiException;
-        if (apiErr.statusCode == 402 && apiErr.code == 'PAYWALL_REQUIRED') {
-          context.go('/paywall');
-          return;
-        }
+      if (mounted) {
         setState(() {
-          _error = apiErr.message;
           _loading = false;
-        });
-      } else {
-        setState(() {
-          _error = 'Failed to load.';
-          _loading = false;
+          if (e is DioException && e.error is ApiException) {
+            _error = (e.error as ApiException).message;
+          } else {
+            _error = 'Failed to load who liked you.';
+          }
         });
       }
-    }
-  }
-
-  void _removeProfile(String userId) {
-    setState(() {
-      _profiles = _profiles
-          .where((p) => (p as Map)['user_id'] != userId)
-          .toList();
-    });
-  }
-
-  Future<void> _swipe(String userId, bool like) async {
-    try {
-      await DiscoveryApi.swipe(userId, like);
-      _removeProfile(userId);
-      if (mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (mounted && e is DioException && e.error is ApiException) {
-        final apiErr = e.error as ApiException;
-        if (apiErr.statusCode == 402 && apiErr.code == 'LIKE_LIMIT') {
-          context.go('/paywall');
-          return;
-        }
-      }
-      if (mounted) Navigator.of(context).pop();
     }
   }
 
@@ -95,24 +89,46 @@ class _LikesScreenState extends State<LikesScreen> {
     if (_loading) {
       return Scaffold(
         backgroundColor: _bg,
-        appBar: AppBar(title: const Text('Liked You')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: SafeArea(
+          child: Center(
+            child: CircularProgressIndicator(color: _actionPurple),
+          ),
+        ),
       );
     }
     if (_error != null) {
       return Scaffold(
         backgroundColor: _bg,
-        appBar: AppBar(title: const Text('Liked You')),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: Text(
+            'Liked You',
+            style: GoogleFonts.quicksand(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: DatoxColors.textPrimary,
+            ),
+          ),
+        ),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(_error!, textAlign: TextAlign.center),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.quicksand(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: DatoxColors.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 FilledButton(
-                  onPressed: _load,
+                  onPressed: () => _load(),
                   child: const Text('Retry'),
                 ),
               ],
@@ -121,212 +137,571 @@ class _LikesScreenState extends State<LikesScreen> {
         ),
       );
     }
-    if (_profiles.isEmpty) {
-      return Scaffold(
-        backgroundColor: _bg,
-        appBar: AppBar(title: const Text('Liked You')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Text(
-              'People who liked you will appear here.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: _textSecondary,
-                  ),
-            ),
-          ),
-        ),
-      );
-    }
+
+    final totalLikes = _items.length;
+    final freePreviews = _items.take(_freePreviewLimit).toList();
+    final moreCount = totalLikes > _freePreviewLimit ? totalLikes - _freePreviewLimit : 0;
 
     return Scaffold(
       backgroundColor: _bg,
-      appBar: AppBar(
-        title: const Text('Liked You'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _load,
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          itemCount: _profiles.length,
-          itemBuilder: (context, index) {
-            final p = _profiles[index] as Map<String, dynamic>;
-            final birthYear = p['birth_year'];
-            final age = birthYear != null
-                ? DateTime.now().year - (birthYear is int ? birthYear : int.tryParse(birthYear.toString()) ?? 0)
-                : null;
-            final distance = p['distance_km'];
-            final name = (p['name'] ?? 'Unknown').toString();
-            final city = (p['city'] ?? '').toString();
-            final photoUrl = p['primary_photo_url'] as String?;
-            final userId = p['user_id'] as String? ?? '';
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _LikerCard(
-                photoUrl: photoUrl,
-                seed: userId,
-                name: name,
-                age: age,
-                city: city,
-                distance: distance,
-                verified: p['verification_status'] == 'verified',
-                onTap: () async {
-                  await showDiscoveryProfileDetailSheet(
-                    context,
-                    profile: p,
-                    age: age ?? 0,
-                    distance: distance,
-                    onPass: () => _swipe(userId, false),
-                    onLike: () => _swipe(userId, true),
-                    onBoost: () => _swipe(userId, true),
-                  );
-                },
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _LikerCard extends StatelessWidget {
-  const _LikerCard({
-    required this.photoUrl,
-    required this.seed,
-    required this.name,
-    required this.age,
-    required this.city,
-    required this.distance,
-    required this.verified,
-    required this.onTap,
-  });
-
-  final String? photoUrl;
-  final String seed;
-  final String name;
-  final int? age;
-  final String city;
-  final dynamic distance;
-  final bool verified;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final subtitle = [
-      if (city.isNotEmpty) city,
-      if (distance != null) '${distance.toString()} km away',
-    ].join(' • ');
-
-    return Material(
-      color: _cardBg,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: photoUrl != null && photoUrl!.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: photoUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => const ColoredBox(
-                            color: _textSecondary,
-                            child: Center(
-                              child: Icon(Icons.person, color: Colors.white54),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _load,
+          color: _actionPurple,
+          child: CustomScrollView(
+            slivers: [
+              // Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 16, 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Liked You',
+                              style: GoogleFonts.quicksand(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: DatoxColors.textPrimary,
+                                height: 1.15,
+                              ),
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'They swiped right — will you? 👀',
+                              style: GoogleFonts.quicksand(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: DatoxColors.textMuted,
+                                height: 1.25,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [_actionPurple, _actionPink],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          errorWidget: (_, __, ___) => _FallbackImage(seed: seed),
-                        )
-                      : _FallbackImage(seed: seed),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            age != null ? '$name, $age' : name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: _textPrimary,
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _actionPurple.withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
+                          ],
+                        ),
+                        child: Text(
+                          '$totalLikes likes',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: _white,
                           ),
                         ),
-                        if (verified)
-                          Container(
-                            width: 18,
-                            height: 18,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF60A5FA),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 10,
+                      ),
+                      const SizedBox(width: 10),
+                      Material(
+                        color: Colors.grey.shade200,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          onTap: () {},
+                          customBorder: const CircleBorder(),
+                          child: const SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(
+                              child: FaIcon(
+                                FontAwesomeIcons.bars,
+                                size: 18,
+                                color: DatoxColors.textMuted,
+                              ),
                             ),
                           ),
-                      ],
-                    ),
-                    if (subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: _textSecondary,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: _textSecondary),
+              // Expiry banner
+              if (moreCount > 0)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: _expiryRed,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: _white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '3 likes expire in 23:40:59 — unlock before they\'re gone',
+                            style: GoogleFonts.quicksand(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: _white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (moreCount > 0) const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              // FREE PREVIEWS section
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                  child: Text(
+                    'FREE PREVIEWS — ${freePreviews.length} of $_freePreviewLimit used',
+                    style: GoogleFonts.quicksand(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: DatoxColors.textMuted,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+              ...freePreviews.asMap().entries.map((e) {
+                final i = e.key;
+                final p = e.value as Map<String, dynamic>;
+                return SliverToBoxAdapter(
+                  child: _LikedYouCard(
+                    profile: p,
+                    onPass: () => _onPass(i),
+                    onLike: () => _onLike(p),
+                  ),
+                );
+              }),
+              // VYBB PREMIUM card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_premiumGradientStart, _premiumGradientEnd],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _actionPurple.withValues(alpha: 0.15),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'VYBB PREMIUM',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _white.withValues(alpha: 0.95),
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'See everyone who already likes you ✨',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: _white,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Don\'t keep them waiting. $totalLikes people swiped right on you — match instantly by liking back.',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: _white.withValues(alpha: 0.95),
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Material(
+                          color: _white,
+                          borderRadius: BorderRadius.circular(999),
+                          elevation: 2,
+                          shadowColor: Colors.black26,
+                          child: InkWell(
+                            onTap: () => context.push('/paywall'),
+                            borderRadius: BorderRadius.circular(999),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Unlock All Likes',
+                                    style: GoogleFonts.quicksand(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: DatoxColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 20,
+                                    color: DatoxColors.textPrimary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'From \$9.99/mo · Cancel anytime',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: _white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // X MORE WAITING FOR YOU
+              if (moreCount > 0) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: Text(
+                      '$moreCount MORE WAITING FOR YOU',
+                      style: GoogleFonts.quicksand(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: DatoxColors.textMuted,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.72,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => Container(
+                        decoration: BoxDecoration(
+                          color: _white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _cardShadow,
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Container(
+                                color: Colors.grey.shade200,
+                              ),
+                              Center(
+                                child: Icon(
+                                  Icons.lock_rounded,
+                                  size: 32,
+                                  color: DatoxColors.textMuted.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      childCount: moreCount > 9 ? 9 : moreCount,
+                    ),
+                  ),
+                ),
+              ],
+              if (totalLikes == 0)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Text(
+                        'People who liked you will appear here.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.quicksand(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: DatoxColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
   }
+
+  void _onPass(int index) {
+    setState(() {
+      if (index < _items.length) {
+        _items.removeAt(index);
+      }
+    });
+  }
+
+  void _onLike(Map<String, dynamic> p) {
+    context.push('/paywall');
+  }
 }
 
-class _FallbackImage extends StatelessWidget {
-  const _FallbackImage({required this.seed});
+class _LikedYouCard extends StatelessWidget {
+  const _LikedYouCard({
+    required this.profile,
+    required this.onPass,
+    required this.onLike,
+  });
 
-  final String seed;
+  final Map<String, dynamic> profile;
+  final VoidCallback onPass;
+  final VoidCallback onLike;
+
+  Widget _avatar(String? photoUrl, String name) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CircleAvatar(
+          radius: 32,
+          backgroundColor: Colors.grey.shade300,
+          child: photoUrl != null && photoUrl.isNotEmpty
+              ? ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: photoUrl,
+                    fit: BoxFit.cover,
+                    width: 64,
+                    height: 64,
+                    placeholder: (_, __) => Text(
+                      initial,
+                      style: GoogleFonts.quicksand(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: DatoxColors.textMuted,
+                      ),
+                    ),
+                    errorWidget: (_, __, ___) => Text(
+                      initial,
+                      style: GoogleFonts.quicksand(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: DatoxColors.textMuted,
+                      ),
+                    ),
+                  ),
+                )
+              : Text(
+                  initial,
+                  style: GoogleFonts.quicksand(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: DatoxColors.textMuted,
+                  ),
+                ),
+        ),
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_actionPurple, _actionPink],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(color: _white, width: 2),
+            ),
+            child: const Icon(Icons.favorite_rounded, size: 14, color: _white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Detail line from API: "City · X km" or "City" or "Near you".
+  String _detailSubtitle(String city, Object? distanceKm) {
+    final dist = distanceKm is num ? distanceKm.toDouble() : null;
+    final cityPart = city.isNotEmpty ? city : 'Near you';
+    if (dist != null) return '$cityPart · ${dist.toStringAsFixed(1)} km';
+    return cityPart;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      'https://picsum.photos/seed/$seed/160/160',
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const ColoredBox(
-        color: _textSecondary,
-        child: Center(
-          child: Icon(Icons.person, color: Colors.white54),
-        ),
+    final name = (profile['name'] ?? 'Unknown').toString();
+    final birthYear = profile['birth_year'] as int?;
+    final age = birthYear != null ? DateTime.now().year - birthYear : null;
+    final city = (profile['city'] ?? '').toString();
+    final bio = (profile['bio'] ?? '').toString();
+    final photoUrl = profile['primary_photo_url'] as String?;
+    final likedAtIso = profile['liked_at'] as String?;
+    final distanceKm = profile['distance_km'];
+    final quote = bio.length > 50 ? '${bio.substring(0, 50)}...' : bio;
+    final subtitle = _detailSubtitle(city, distanceKm);
+    final likedAgo = _formatLikedAgo(likedAtIso);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _cardShadow,
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _avatar(photoUrl, name),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  age != null ? '$name, $age' : name,
+                  style: GoogleFonts.quicksand(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: DatoxColors.textPrimary,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.quicksand(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: DatoxColors.textMuted,
+                  ),
+                ),
+                if (quote.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '"$quote"',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.quicksand(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                      color: DatoxColors.textMuted,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Text(
+                  '❤️ Liked you $likedAgo',
+                  style: GoogleFonts.quicksand(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _actionRed,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                color: _actionRed,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: onPass,
+                  customBorder: const CircleBorder(),
+                  child: const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: Icon(Icons.close_rounded, color: _white, size: 26),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: onLike,
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_actionPurple, _actionPink],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.favorite_rounded, color: _white, size: 24),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
